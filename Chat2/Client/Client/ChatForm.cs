@@ -11,7 +11,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
-
+using System.Security.Cryptography;
 
 namespace Client
 {
@@ -21,7 +21,7 @@ namespace Client
         private ChatEvent _addMessage;
         private Socket _serverSocket;
         private Thread listenThread;
-        private string _host = "192.168.33.241";
+        private string _host = "192.168.1.42";
         private int _port = 2222;
         public ChatForm()
         {
@@ -108,6 +108,28 @@ namespace Client
                 AddMessage("Связь с сервером не установлена.");
             
         }
+        private byte[] Encrypt(string clearText, string EncryptionKey = "123")
+        {
+
+            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
+            byte[] encrypted;
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 }); // еще один плюс шарпа в наличие таких вот костылей.
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(clearBytes, 0, clearBytes.Length);
+                        cs.Close();
+                    }
+                    encrypted = ms.ToArray();
+                }
+            }
+            return encrypted;
+        }
 
         public void Send(byte[] buffer)
         {
@@ -121,7 +143,8 @@ namespace Client
         {
             try
             {
-                _serverSocket.Send(Encoding.Unicode.GetBytes(Buffer));
+                byte[] sas = Encrypt(Buffer);
+                _serverSocket.Send(sas);
             }
             catch { }
         }
