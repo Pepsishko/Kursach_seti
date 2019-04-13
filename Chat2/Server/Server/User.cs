@@ -6,11 +6,33 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Security.Cryptography;
+using System.IO;
 
 namespace Server
 {
     public class User
     {
+        private string Decrypt(byte[] cipherBytes, string EncryptionKey = "123")
+        {
+            string cipherText = "";
+            using (Aes encryptor = Aes.Create())
+            {
+                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
+                encryptor.Key = pdb.GetBytes(32);
+                encryptor.IV = pdb.GetBytes(16);
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(cipherBytes, 0, cipherBytes.Length);
+                       // cs.Close();
+                    }
+                    cipherText = Encoding.UTF8.GetString(ms.ToArray());
+                }
+            }
+            return cipherText;
+        }
         private Thread _userThread;
         private string _userName;
         private bool AuthSuccess = false;
@@ -49,6 +71,7 @@ namespace Server
         }
         private void handleCommand(string cmd)
         {
+            cmd = Decrypt(Encoding.Unicode.GetBytes(cmd));
             try
             {
                 string[] commands = cmd.Split('#');
