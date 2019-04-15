@@ -26,7 +26,7 @@ namespace Server
                     using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cs.Write(cipherBytes, 0, cipherBytes.Length);
-                       // cs.Close();
+                        cs.Close();
                     }
                     cipherText = Encoding.UTF8.GetString(ms.ToArray());
                 }
@@ -56,6 +56,7 @@ namespace Server
                 {
                     byte[] buffer = new byte[2048];
                     int bytesReceive = _userHandle.Receive(buffer);
+                    
                     handleCommand(Encoding.Unicode.GetString(buffer, 0, bytesReceive));
                 }
             }
@@ -71,7 +72,6 @@ namespace Server
         }
         private void handleCommand(string cmd)
         {
-            cmd = Decrypt(Encoding.Unicode.GetBytes(cmd));
             try
             {
                 string[] commands = cmd.Split('#');
@@ -146,7 +146,7 @@ namespace Server
                     {
                         string[] Arguments = currentCommand.Split('|');
                         string TargetName = Arguments[1];
-                        string Content = Arguments[2];
+                        string Content =Decrypt( Encoding.Unicode.GetBytes( Arguments[2]));
                         User targetUser = Server.GetUser(TargetName);
                         if(targetUser == null)
                         {
