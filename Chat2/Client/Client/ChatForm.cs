@@ -143,8 +143,8 @@ namespace Client
         {
             try
             {
-                byte[] sas = Encrypt(Buffer);
-                _serverSocket.Send(sas);
+               
+                _serverSocket.Send(Encoding.Unicode.GetBytes(Buffer));
             }
             catch { }
         }
@@ -275,7 +275,8 @@ namespace Client
                 if(msgData[0] == '"')
                 {
                     string temp = msgData.Split(' ')[0];
-                    string content = msgData.Substring(temp.Length+1);
+                    string content =Encoding.Unicode.GetString(Encrypt(msgData.Substring(temp.Length+1)));
+                    
                     temp = temp.Replace("\"", string.Empty);
                     Send($"#private|{temp}|{content}");
                 }
