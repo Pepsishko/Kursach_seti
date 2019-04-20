@@ -12,6 +12,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using System.Security.Cryptography;
+using System.Configuration;
 
 namespace Client
 {
@@ -108,27 +109,34 @@ namespace Client
                 AddMessage("Связь с сервером не установлена.");
             
         }
-        private byte[] Encrypt(string clearText, string EncryptionKey = "123")
+        private string Encrypt(string toEncrypt)
         {
+            bool useHashing = true;
+            byte[] keyArray;
+            byte[] toEncryptArray = UTF8Encoding.UTF8.GetBytes(toEncrypt);
 
-            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
-            byte[] encrypted;
-            using (Aes encryptor = Aes.Create())
+            System.Configuration.AppSettingsReader settingsReader = new AppSettingsReader();
+            // Get the key from config file
+            string key = (string)settingsReader.GetValue("SecurityKey", typeof(String));
+            //System.Windows.Forms.MessageBox.Show(key);
+            if (useHashing)
             {
-                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 }); // еще один плюс шарпа в наличие таких вот костылей.
-                encryptor.Key = pdb.GetBytes(32);
-                encryptor.IV = pdb.GetBytes(16);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(clearBytes, 0, clearBytes.Length);
-                        cs.Close();
-                    }
-                    encrypted = ms.ToArray();
-                }
+                MD5CryptoServiceProvider hashmd5 = new MD5CryptoServiceProvider();
+                keyArray = hashmd5.ComputeHash(UTF8Encoding.UTF8.GetBytes(key));
+                hashmd5.Clear();
             }
-            return encrypted;
+            else
+                keyArray = UTF8Encoding.UTF8.GetBytes(key);
+
+            TripleDESCryptoServiceProvider tdes = new TripleDESCryptoServiceProvider();
+            tdes.Key = keyArray;
+            tdes.Mode = CipherMode.ECB;
+            tdes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform cTransform = tdes.CreateEncryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+            tdes.Clear();
+            return Convert.ToBase64String(resultArray, 0, resultArray.Length);
         }
 
         public void Send(byte[] buffer)
@@ -239,7 +247,7 @@ namespace Client
             {
                 while (_serverSocket.Connected)
                 {
-                    byte[] buffer = new byte[2048];
+                    byte[] buffer = new byte[4096];
                     int bytesReceive = _serverSocket.Receive(buffer);
                     handleCommand(Encoding.Unicode.GetString(buffer, 0, bytesReceive));
                 }
@@ -275,7 +283,7 @@ namespace Client
                 if(msgData[0] == '"')
                 {
                     string temp = msgData.Split(' ')[0];
-                    string content =Encoding.Unicode.GetString(Encrypt(msgData.Substring(temp.Length+1)));
+                    string content =Encrypt(msgData.Substring(temp.Length+1).Trim());
                     
                     temp = temp.Replace("\"", string.Empty);
                     Send($"#private|{temp}|{content}");
