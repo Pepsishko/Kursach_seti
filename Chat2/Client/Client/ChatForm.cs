@@ -57,7 +57,7 @@ namespace Client
                     return;
                 }
                 FileInfo fi = new FileInfo(ofp.FileName);
-                byte[] buffer = File.ReadAllBytes(ofp.FileName);
+                byte[] buffer =  File.ReadAllBytes(ofp.FileName);
                 Send($"#sendfileto|{userList.SelectedItem}|{buffer.Length}|{fi.Name}");//g
                 Send(buffer);
 
@@ -108,6 +108,36 @@ namespace Client
             else
                 AddMessage("Связь с сервером не установлена.");
             
+        }
+        private string Decrypt(string cipherString)
+        {
+            bool useHashing = true;
+            byte[] keyArray;
+            byte[] toEncryptArray = Convert.FromBase64String(cipherString);
+
+            System.Configuration.AppSettingsReader settingsReader = new AppSettingsReader();
+            //Get your key from config file to open the lock!
+            string key = (string)settingsReader.GetValue("SecurityKey", typeof(String));
+
+            if (useHashing)
+            {
+                MD5CryptoServiceProvider hashmd5 = new MD5CryptoServiceProvider();
+                keyArray = hashmd5.ComputeHash(UTF8Encoding.UTF8.GetBytes(key));
+                hashmd5.Clear();
+            }
+            else
+                keyArray = UTF8Encoding.UTF8.GetBytes(key);
+
+            TripleDESCryptoServiceProvider tdes = new TripleDESCryptoServiceProvider();
+            tdes.Key = keyArray;
+            tdes.Mode = CipherMode.ECB;
+            tdes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform cTransform = tdes.CreateDecryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+
+            tdes.Clear();
+            return UTF8Encoding.UTF8.GetString(resultArray);
         }
         private string Encrypt(string toEncrypt)
         {
@@ -160,7 +190,6 @@ namespace Client
 
         public void handleCommand(string cmd)
         {
-            
                 string[] commands = cmd.Split('#');
                 int countCommands = commands.Length;
                 for (int i = 0; i < countCommands; i++)
@@ -199,8 +228,15 @@ namespace Client
                         AddMessage(Arguments[1], Arguments[2]);
                         continue;
                     }
-
-                    if(currentCommand.Contains("userlist"))
+                    if (currentCommand.Contains("prvt"))
+                    {
+                        string[] Arguments = currentCommand.Split('|');
+                        Arguments[2] = Decrypt(Arguments[2]);
+                        Arguments[1] = Arguments[1] +" "+ Arguments[2];
+                        AddMessage(Arguments[1], Arguments[3]);
+                        continue;
+                    }
+                    if (currentCommand.Contains("userlist"))
                     {
                         string[] Users = currentCommand.Split('|')[1].Split(',');
                         int countUsers = Users.Length;

@@ -24,3 +24,10 @@ C:\Users\Pepsishko\Desktop\Kursach_seti-master\Chat2\Server\Server\bin\Debug\Ser
 C:\Users\Pepsishko\Desktop\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.csproj.CoreCompileInputs.cache
 C:\Users\Pepsishko\Desktop\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.exe
 C:\Users\Pepsishko\Desktop\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.pdb
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\bin\Debug\Server.exe.config
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\bin\Debug\Server.exe
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\bin\Debug\Server.pdb
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.csprojAssemblyReference.cache
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.csproj.CoreCompileInputs.cache
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.exe
+C:\Users\Pepsishko\Desktop\Шифрование DES\Kursach_seti-master\Chat2\Server\Server\obj\Debug\Server.pdb

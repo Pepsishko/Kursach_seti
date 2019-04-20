@@ -45,6 +45,38 @@ namespace Server
             tdes.Clear();
             return UTF8Encoding.UTF8.GetString(resultArray);
         }
+
+        private string Encrypt(string toEncrypt)
+        {
+            bool useHashing = true;
+            byte[] keyArray;
+            byte[] toEncryptArray = UTF8Encoding.UTF8.GetBytes(toEncrypt);
+
+            System.Configuration.AppSettingsReader settingsReader = new AppSettingsReader();
+            // Get the key from config file
+            string key = (string)settingsReader.GetValue("SecurityKey", typeof(String));
+            //System.Windows.Forms.MessageBox.Show(key);
+            if (useHashing)
+            {
+                MD5CryptoServiceProvider hashmd5 = new MD5CryptoServiceProvider();
+                keyArray = hashmd5.ComputeHash(UTF8Encoding.UTF8.GetBytes(key));
+                hashmd5.Clear();
+            }
+            else
+                keyArray = UTF8Encoding.UTF8.GetBytes(key);
+
+            TripleDESCryptoServiceProvider tdes = new TripleDESCryptoServiceProvider();
+            tdes.Key = keyArray;
+            tdes.Mode = CipherMode.ECB;
+            tdes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform cTransform = tdes.CreateEncryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+            tdes.Clear();
+            return Convert.ToBase64String(resultArray, 0, resultArray.Length);
+        }
+
+
         private Thread _userThread;
         private string _userName;
         private bool AuthSuccess = false;
@@ -165,8 +197,11 @@ namespace Server
                             SendMessage($"Пользователь {TargetName} не найден!","Red");
                             continue;
                         }
-                        SendMessage($"-[Отправлено][{TargetName}]: {Content}","Black");
-                        targetUser.SendMessage($"-[Получено][{Username}]: {Content}","Black");
+                        Console.WriteLine($"-[Отправлено][{TargetName}]: {Content}");
+                        Console.WriteLine($"-[Получено][{Username}]: {Content}");
+                        Content = Encrypt(Content);
+                        PrivateMessage($"-[Отправлено][{TargetName}]:",$" {Content}","Black");
+                        targetUser.PrivateMessage($"-[Получено][{Username}]:",$" {Content}","Black");
                         continue;
                     }
 
@@ -184,6 +219,11 @@ namespace Server
         public void SendMessage(string content,string clr)
         {
             Send($"#msg|{content}|{clr}");
+        }
+        public void PrivateMessage(string zagolovock, string content, string clr)
+        {
+            
+            Send($"#prvt|{zagolovock}|{content}|{clr}");
         }
         public void Send(byte[] buffer)
         {
