@@ -8,30 +8,42 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Security.Cryptography;
 using System.IO;
+using System.Configuration;
 
 namespace Server
 {
     public class User
     {
-        private string Decrypt(byte[] cipherBytes, string EncryptionKey = "123")
+
+        private string Decrypt(string cipherString)
         {
-            string cipherText = "";
-            using (Aes encryptor = Aes.Create())
+            bool useHashing = true;
+            byte[] keyArray;
+            byte[] toEncryptArray = Convert.FromBase64String(cipherString);
+
+            System.Configuration.AppSettingsReader settingsReader = new AppSettingsReader();
+            //Get your key from config file to open the lock!
+            string key = (string)settingsReader.GetValue("SecurityKey", typeof(String));
+
+            if (useHashing)
             {
-                Rfc2898DeriveBytes pdb = new Rfc2898DeriveBytes(EncryptionKey, new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
-                encryptor.Key = pdb.GetBytes(32);
-                encryptor.IV = pdb.GetBytes(16);
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(cipherBytes, 0, cipherBytes.Length);
-                        cs.Close();
-                    }
-                    cipherText = Encoding.UTF8.GetString(ms.ToArray());
-                }
+                MD5CryptoServiceProvider hashmd5 = new MD5CryptoServiceProvider();
+                keyArray = hashmd5.ComputeHash(UTF8Encoding.UTF8.GetBytes(key));
+                hashmd5.Clear();
             }
-            return cipherText;
+            else
+                keyArray = UTF8Encoding.UTF8.GetBytes(key);
+
+            TripleDESCryptoServiceProvider tdes = new TripleDESCryptoServiceProvider();
+            tdes.Key = keyArray;
+            tdes.Mode = CipherMode.ECB;
+            tdes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform cTransform = tdes.CreateDecryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+
+            tdes.Clear();
+            return UTF8Encoding.UTF8.GetString(resultArray);
         }
         private Thread _userThread;
         private string _userName;
@@ -54,7 +66,7 @@ namespace Server
             {
                 while (_userHandle.Connected)
                 {
-                    byte[] buffer = new byte[2048];
+                    byte[] buffer = new byte[4096];
                     int bytesReceive = _userHandle.Receive(buffer);
                     
                     handleCommand(Encoding.Unicode.GetString(buffer, 0, bytesReceive));
@@ -146,7 +158,7 @@ namespace Server
                     {
                         string[] Arguments = currentCommand.Split('|');
                         string TargetName = Arguments[1];
-                        string Content =Decrypt( Encoding.Unicode.GetBytes( Arguments[2]));
+                        string Content =Decrypt( Arguments[2].Trim());
                         User targetUser = Server.GetUser(TargetName);
                         if(targetUser == null)
                         {
