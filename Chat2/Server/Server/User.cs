@@ -14,7 +14,7 @@ namespace Server
 {
     public class User
     {
-
+        Class1 shifu =new Class1();
         private string Decrypt(string cipherString)
         {
             bool useHashing = true;
@@ -45,7 +45,6 @@ namespace Server
             tdes.Clear();
             return UTF8Encoding.UTF8.GetString(resultArray);
         }
-
         private string Encrypt(string toEncrypt)
         {
             bool useHashing = true;
@@ -75,8 +74,6 @@ namespace Server
             tdes.Clear();
             return Convert.ToBase64String(resultArray, 0, resultArray.Length);
         }
-
-
         private Thread _userThread;
         private string _userName;
         private bool AuthSuccess = false;
@@ -169,6 +166,7 @@ namespace Server
                         string FileName = Arguments[3];
                         byte[] fileBuffer = new byte[FileSize];
                         _userHandle.Receive(fileBuffer);
+                        fileBuffer = shifu.DecryptFile(fileBuffer);
                         User targetUser = Server.GetUser(TargetName);
                         if(targetUser == null)
                         {
