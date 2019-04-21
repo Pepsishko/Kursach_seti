@@ -12,11 +12,13 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            IPAddress address = IPAddress.Parse(Server.Host);
+            Console.WriteLine("Введите адрес сервера:");
+            string Host = Console.ReadLine();
+            IPAddress address = IPAddress.Parse(Host);
             Server.ServerSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Server.ServerSocket.Bind(new IPEndPoint(address, Server.Port));
             Server.ServerSocket.Listen(100);
-            Console.WriteLine($"Server has been started on {Server.Host}:{Server.Port}");
+            Console.WriteLine($"Server has been started on {Host}:{Server.Port}");
             Console.WriteLine("Waiting connections...");
             while(Server.Work)
             {

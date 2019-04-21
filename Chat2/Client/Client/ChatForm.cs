@@ -16,16 +16,20 @@ using System.Configuration;
 
 namespace Client
 {
+    
     public partial class ChatForm : Form
     {
+        SignIn sign = new SignIn();
+        Class1 shifu = new Class1();
         private delegate void ChatEvent(string content,string clr);
         private ChatEvent _addMessage;
         private Socket _serverSocket;
         private Thread listenThread;
-        private string _host = "192.168.1.42";
+        private string _host ;
         private int _port = 2222;
-        public ChatForm()
+        public ChatForm(string host)
         {
+            this._host = host;
             InitializeComponent();
             _addMessage = new ChatEvent(AddMessage);
             userMenu = new ContextMenuStrip();
@@ -58,9 +62,11 @@ namespace Client
                 }
                 FileInfo fi = new FileInfo(ofp.FileName);
                 byte[] buffer =  File.ReadAllBytes(ofp.FileName);
+                buffer =shifu.EncryptFile(buffer);
                 Send($"#sendfileto|{userList.SelectedItem}|{buffer.Length}|{fi.Name}");//g
+                
                 Send(buffer);
-
+                
 
             };
             userMenu.Items.Add(SendFileItem);
@@ -168,7 +174,31 @@ namespace Client
             tdes.Clear();
             return Convert.ToBase64String(resultArray, 0, resultArray.Length);
         }
-
+        private byte[] EncryptFiles(byte[] clearBytes, string EncryptionKey = "123")
+        {
+            //Объявляем объект класса AES
+            Aes aes = Aes.Create();
+            //Генерируем соль
+            aes.GenerateIV();
+            //Присваиваем ключ. aeskey - переменная (массив байт), сгенерированная методом GenerateKey() класса AES
+            aes.Key = Encoding.UTF8.GetBytes("123");
+            byte[] encrypted;
+            ICryptoTransform crypt = aes.CreateEncryptor(aes.Key, aes.IV);
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (CryptoStream cs = new CryptoStream(ms, crypt, CryptoStreamMode.Write))
+                {
+                    using (StreamWriter sw = new StreamWriter(cs))
+                    {
+                        sw.Write(clearBytes);
+                    }
+                }
+                //Записываем в переменную encrypted зашиврованный поток байтов
+                encrypted = ms.ToArray();
+            }
+            //Возвращаем поток байт + крепим соль
+            return encrypted.Concat(aes.IV).ToArray();
+        }
         public void Send(byte[] buffer)
         {
             try
