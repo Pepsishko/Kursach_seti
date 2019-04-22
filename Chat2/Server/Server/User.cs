@@ -166,7 +166,6 @@ namespace Server
                         string FileName = Arguments[3];
                         byte[] fileBuffer = new byte[FileSize];
                         _userHandle.Receive(fileBuffer);
-                        fileBuffer = shifu.DecryptFile(fileBuffer);
                         User targetUser = Server.GetUser(TargetName);
                         if(targetUser == null)
                         {
