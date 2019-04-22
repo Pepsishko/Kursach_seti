@@ -292,7 +292,7 @@ namespace Client
                             Send("#yy|"+idFile);
                             byte[] fileBuffer = new byte[int.Parse(FileSize)];
                             _serverSocket.Receive(fileBuffer);
-                            File.WriteAllBytes(fileName, fileBuffer);
+                            File.WriteAllBytes(fileName,shifu.DecryptFile( fileBuffer));
                             MessageBox.Show($"Файл {fileName} принят.");
                         }
                         else
