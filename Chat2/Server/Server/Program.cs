@@ -12,9 +12,10 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Введите адрес сервера:");
-            string Host = Console.ReadLine();
-            IPAddress address = IPAddress.Parse(Host);
+            String host = Dns.GetHostName();
+            IPAddress ip = Dns.GetHostByName(host).AddressList[0];
+            string Host = Convert.ToString( ip);
+            IPAddress address = ip;
             Server.ServerSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Server.ServerSocket.Bind(new IPEndPoint(address, Server.Port));
             Server.ServerSocket.Listen(100);
